@@ -1,0 +1,1678 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Космостан — кооперативная игра о жизни экипажа космической станции</title>
+  <meta name="description" content="Космостан — кооперативная 3D-игра и симулятор экипажа космической станции: разрушаемые отсеки, разгерметизация, симуляция атмосферы и пять отделов, которые зависят друг от друга. Следи за разработкой!">
+  <meta name="keywords" content="кооперативная игра, космическая станция, симулятор экипажа, космический симулятор, песочница, кооператив, Космостан">
+  <meta name="theme-color" content="#05070f">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Космостан — одна станция, один экипаж, тысяча способов всё сломать">
+  <meta property="og:description" content="Кооперативная 3D-игра о жизни экипажа космической станции. Чини, туши, спасай и разбирайся, кто открыл шлюз.">
+  <meta property="og:url" content="https://example.com/">
+  <!-- ЗАМЕНИТЬ: абсолютный URL OG-изображения 1200×630 -->
+  <meta property="og:image" content="https://example.com/og-image.jpg">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Космостан — кооперативный симулятор экипажа станции">
+  <meta name="twitter:description" content="Разрушаемые отсеки, разгерметизация, живая атмосфера и пять отделов экипажа.">
+  <!-- ЗАМЕНИТЬ: URL изображения для Twitter/X -->
+  <meta name="twitter:image" content="https://example.com/og-image.jpg">
+
+  <!-- Favicon: inline-SVG через data URI -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%2305070f'/%3E%3Cellipse cx='32' cy='32' rx='24' ry='8' fill='none' stroke='%234de1ff' stroke-width='3' transform='rotate(-25 32 32)'/%3E%3Ccircle cx='32' cy='32' r='9' fill='%23ff8a3d'/%3E%3C/svg%3E">
+
+  <!-- Шрифты -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@400;500;600&family=Russo+One&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    /* =========================================================
+       1. ПЕРЕМЕННЫЕ
+       ========================================================= */
+    :root {
+      /* Цвета */
+      --c-bg: #05070f;
+      --c-bg-2: #0b1020;
+      --c-surface: rgba(16, 24, 48, 0.55);
+      --c-surface-solid: #0e1530;
+      --c-line: rgba(77, 225, 255, 0.22);
+      --c-text: #e8eeff;
+      --c-muted: #a9b4d0;
+      --c-cyan: #4de1ff;
+      --c-orange: #ff8a3d;
+      --c-violet: #8b5cf6;
+      --c-ok: #3ee69a;
+      --c-wip: #ffc542;
+      --c-plan: #8f9bbd;
+
+      /* Цвета отделов */
+      --d-eng: #ffb020;
+      --d-med: #2ee6a6;
+      --d-sci: #b18cff;
+      --d-sec: #ff5a6a;
+      --d-cmd: #5aa2ff;
+
+      /* Шрифты */
+      --f-head: "Russo One", "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --f-body: "Exo 2", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+      --f-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+      /* Размеры */
+      --fs-h1: clamp(2.4rem, 1.4rem + 5vw, 5rem);
+      --fs-h2: clamp(1.7rem, 1.2rem + 2.2vw, 2.8rem);
+      --fs-h3: clamp(1.1rem, 1rem + 0.5vw, 1.35rem);
+      --fs-body: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --fs-small: 0.875rem;
+      --fs-mono: 0.95rem;
+
+      --sp-1: 0.5rem;
+      --sp-2: 1rem;
+      --sp-3: 1.5rem;
+      --sp-4: 2rem;
+      --sp-5: 3rem;
+      --sp-section: clamp(4rem, 3rem + 5vw, 7.5rem);
+
+      --r-sm: 6px;
+      --r-md: 12px;
+      --r-lg: 20px;
+
+      --sh-glow: 0 0 0 1px rgba(77, 225, 255, .35), 0 0 24px rgba(77, 225, 255, .25);
+      --sh-glow-orange: 0 0 0 1px rgba(255, 138, 61, .5), 0 0 28px rgba(255, 138, 61, .35);
+      --sh-card: 0 10px 30px rgba(0, 0, 0, .35);
+
+      --container: 1200px;
+      --header-h: 68px;
+      --blur: 12px;
+      --ease: cubic-bezier(.2, .7, .2, 1);
+    }
+
+    /* =========================================================
+       2. БАЗА
+       ========================================================= */
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      margin: 0;
+      min-width: 320px;
+      overflow-x: hidden;
+      font-family: var(--f-body);
+      font-size: var(--fs-body);
+      line-height: 1.6;
+      color: var(--c-text);
+      background:
+        radial-gradient(1200px 600px at 80% -10%, rgba(139, 92, 246, .14), transparent 60%),
+        radial-gradient(900px 500px at -10% 40%, rgba(77, 225, 255, .07), transparent 60%),
+        linear-gradient(180deg, var(--c-bg) 0%, var(--c-bg-2) 50%, var(--c-bg) 100%);
+      background-attachment: fixed;
+    }
+    /* Лёгкие сканлайны поверх всей страницы */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: var(--c-cyan); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    h1, h2, h3 { font-family: var(--f-head); font-weight: 400; line-height: 1.15; margin: 0 0 var(--sp-2); letter-spacing: .01em; }
+    p { margin: 0 0 var(--sp-2); }
+    ul { margin: 0; padding: 0; list-style: none; }
+
+    :focus-visible {
+      outline: 2px solid var(--c-orange);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0 0 0 0);
+      white-space: nowrap; border: 0;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: var(--sp-2);
+      top: -100px;
+      z-index: 1000;
+      padding: .75rem 1rem;
+      background: var(--c-orange);
+      color: #140800;
+      font-weight: 600;
+      border-radius: var(--r-sm);
+      text-decoration: none;
+    }
+    .skip-link:focus { top: var(--sp-2); }
+
+    .container {
+      width: 100%;
+      max-width: var(--container);
+      margin-inline: auto;
+      padding-inline: clamp(1rem, 4vw, 2rem);
+    }
+
+    section[id] { scroll-margin-top: calc(var(--header-h) + 12px); }
+
+    .section { padding-block: var(--sp-section); position: relative; }
+
+    /* Моноширинная «терминальная» подпись */
+    .mono {
+      font-family: var(--f-mono);
+      font-size: var(--fs-mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--c-cyan);
+    }
+    .section-head { max-width: 760px; margin-bottom: var(--sp-5); }
+    .section-head .mono { display: block; margin-bottom: var(--sp-1); }
+    .section-head p { color: var(--c-muted); }
+    .accent { color: var(--c-orange); }
+
+    /* =========================================================
+       3. КНОПКИ
+       ========================================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .5rem;
+      min-height: 48px;
+      min-width: 44px;
+      padding: .75rem 1.5rem;
+      border-radius: var(--r-sm);
+      border: 1px solid transparent;
+      font-family: var(--f-body);
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform .25s var(--ease), box-shadow .25s var(--ease), background-color .25s, color .25s;
+    }
+    .btn--primary {
+      background: var(--c-orange);
+      color: #1a0b00;
+      box-shadow: 0 0 20px rgba(255, 138, 61, .35);
+    }
+    .btn--ghost {
+      background: rgba(77, 225, 255, .06);
+      color: var(--c-cyan);
+      border-color: rgba(77, 225, 255, .5);
+    }
+    .btn--sm { min-height: 44px; padding: .5rem 1rem; font-size: .9rem; }
+    @media (hover: hover) {
+      .btn--primary:hover { transform: translateY(-2px); box-shadow: var(--sh-glow-orange); }
+      .btn--ghost:hover { transform: translateY(-2px); box-shadow: var(--sh-glow); background: rgba(77, 225, 255, .12); }
+    }
+
+    /* =========================================================
+       4. ШАПКА
+       ========================================================= */
+    .site-header {
+      position: fixed;
+      inset: 0 0 auto 0;
+      z-index: 100;
+      height: var(--header-h);
+      background: rgba(5, 7, 15, .7);
+      -webkit-backdrop-filter: blur(var(--blur));
+      backdrop-filter: blur(var(--blur));
+      border-bottom: 1px solid var(--c-line);
+    }
+    .site-header .container {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--sp-2);
+    }
+    .logo {
+      display: inline-flex;
+      align-items: center;
+      gap: .6rem;
+      min-height: 44px;
+      font-family: var(--f-head);
+      font-size: 1.25rem;
+      color: var(--c-text);
+      text-decoration: none;
+      letter-spacing: .04em;
+    }
+    .logo svg { width: 30px; height: 30px; flex: none; }
+
+    /* Бургер */
+    .burger {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px; height: 48px;
+      padding: 0;
+      appearance: none;
+      font: inherit;
+      border: 1px solid var(--c-line);
+      border-radius: var(--r-sm);
+      cursor: pointer;
+      background: rgba(77, 225, 255, .05);
+    }
+    .burger span, .burger span::before, .burger span::after {
+      display: block;
+      width: 22px; height: 2px;
+      background: var(--c-cyan);
+      border-radius: 2px;
+      position: relative;
+      transition: transform .3s var(--ease), opacity .2s;
+    }
+    .burger span::before, .burger span::after { content: ""; position: absolute; left: 0; }
+    .burger span::before { transform: translateY(-7px); }
+    .burger span::after { transform: translateY(7px); }
+    .burger[aria-expanded="true"] span { background: transparent; }
+    .burger[aria-expanded="true"] span::before { transform: rotate(45deg); }
+    .burger[aria-expanded="true"] span::after { transform: rotate(-45deg); }
+    .burger:focus-visible { outline: 2px solid var(--c-orange); outline-offset: 3px; }
+
+    .main-nav {
+      position: fixed;
+      top: var(--header-h);
+      left: 0; right: 0;
+      max-height: calc(100vh - var(--header-h));
+      overflow-y: auto;
+      padding: var(--sp-2) clamp(1rem, 4vw, 2rem) var(--sp-4);
+      background: rgba(5, 7, 15, .96);
+      border-bottom: 1px solid var(--c-line);
+      transform: translateY(-110%);
+      opacity: 0;
+      visibility: hidden;
+      transition: transform .35s var(--ease), opacity .35s, visibility 0s .35s;
+    }
+    .main-nav.is-open {
+      transform: none;
+      opacity: 1;
+      visibility: visible;
+      transition: transform .35s var(--ease), opacity .35s;
+    }
+    .main-nav ul { display: flex; flex-direction: column; gap: .25rem; }
+    .main-nav a {
+      display: flex;
+      align-items: center;
+      min-height: 48px;
+      padding: 0 .75rem;
+      color: var(--c-text);
+      text-decoration: none;
+      border-radius: var(--r-sm);
+    }
+    .main-nav a:hover { color: var(--c-cyan); background: rgba(77,225,255,.06); }
+    .main-nav .btn { margin-top: var(--sp-2); width: 100%; }
+    .header-cta { display: none; }
+
+    @media (min-width: 1100px) {
+      .burger { display: none; }
+      .main-nav {
+        position: static;
+        transform: none; opacity: 1; visibility: visible;
+        max-height: none; overflow: visible;
+        padding: 0; background: none; border: 0;
+        display: flex; align-items: center; gap: var(--sp-2);
+      }
+      .main-nav ul { flex-direction: row; gap: 0; }
+      .main-nav a { padding: 0 .6rem; font-size: .95rem; }
+      .main-nav .btn { display: none; }
+      .header-cta { display: inline-flex; }
+    }
+
+    /* =========================================================
+       5. HERO
+       ========================================================= */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      align-items: center;
+      padding-top: calc(var(--header-h) + var(--sp-4));
+      padding-bottom: var(--sp-5);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    /* Звёзды: три слоя тайловых градиентов с разной скоростью */
+    .stars {
+      position: absolute;
+      left: 0; right: 0;
+      top: -400px;
+      height: calc(100% + 800px);
+      z-index: -3;
+      background-repeat: repeat;
+      pointer-events: none;
+    }
+    .stars--far {
+      background-image:
+        radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+        radial-gradient(1px 1px at 90px 140px, #cfe8ff, transparent),
+        radial-gradient(1px 1px at 160px 60px, #fff, transparent),
+        radial-gradient(1px 1px at 230px 190px, #dfe6ff, transparent),
+        radial-gradient(1px 1px at 300px 100px, #fff, transparent),
+        radial-gradient(1px 1px at 50px 260px, #bcd7ff, transparent),
+        radial-gradient(1px 1px at 370px 280px, #fff, transparent);
+      background-size: 400px 400px;
+      opacity: .55;
+      animation: drift 160s linear infinite;
+    }
+    .stars--mid {
+      background-image:
+        radial-gradient(1.5px 1.5px at 40px 70px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 210px 40px, #9feaff, transparent),
+        radial-gradient(1.5px 1.5px at 130px 210px, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 270px 250px, #ffd2b0, transparent);
+      background-size: 400px 400px;
+      opacity: .75;
+      animation: drift 90s linear infinite, twinkle 5s ease-in-out infinite alternate;
+    }
+    .stars--near {
+      background-image:
+        radial-gradient(2px 2px at 80px 120px, #fff, transparent),
+        radial-gradient(2px 2px at 330px 330px, #c9f4ff, transparent),
+        radial-gradient(2.5px 2.5px at 190px 360px, #fff, transparent);
+      background-size: 400px 400px;
+      animation: drift 50s linear infinite, twinkle 3.2s ease-in-out infinite alternate-reverse;
+    }
+    @keyframes drift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(0, 400px, 0); }
+    }
+    @keyframes twinkle {
+      from { opacity: .35; }
+      to { opacity: 1; }
+    }
+
+    /* Туманность и планета */
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      background:
+        radial-gradient(600px 380px at 75% 35%, rgba(139, 92, 246, .22), transparent 70%),
+        radial-gradient(500px 300px at 85% 75%, rgba(77, 225, 255, .12), transparent 70%);
+    }
+    .planet {
+      position: absolute;
+      z-index: -2;
+      width: clamp(380px, 70vw, 900px);
+      aspect-ratio: 1;
+      right: -25%;
+      bottom: -55%;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 25%, #2a3c78 0%, #141d42 40%, #070a18 70%);
+      box-shadow:
+        inset -40px -30px 80px rgba(0,0,0,.8),
+        0 0 80px rgba(77, 225, 255, .18),
+        0 0 0 1px rgba(77, 225, 255, .15);
+      opacity: .9;
+    }
+
+    .hero-grid {
+      display: grid;
+      gap: var(--sp-4);
+      align-items: center;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .4rem .8rem;
+      border: 1px solid rgba(255, 138, 61, .55);
+      border-radius: 999px;
+      background: rgba(255, 138, 61, .1);
+      font-family: var(--f-mono);
+      font-size: var(--fs-mono);
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: #ffb98a;
+      margin-bottom: var(--sp-3);
+    }
+    .badge::before {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--c-orange);
+      box-shadow: 0 0 10px var(--c-orange);
+      animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse { 50% { opacity: .3; transform: scale(.8); } }
+
+    .hero h1 {
+      font-size: var(--fs-h1);
+      margin-bottom: var(--sp-2);
+      background: linear-gradient(90deg, #ffffff 0%, #bff3ff 55%, var(--c-cyan) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 0 40px rgba(77, 225, 255, .15);
+    }
+    .hero-slogan {
+      font-family: var(--f-head);
+      font-size: clamp(1.15rem, 1rem + 1vw, 1.6rem);
+      color: var(--c-orange);
+      margin-bottom: var(--sp-2);
+    }
+    .hero-lead { color: var(--c-muted); max-width: 560px; margin-bottom: var(--sp-4); }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+    .hero-actions .btn { flex: 1 1 220px; }
+    @media (min-width: 600px) { .hero-actions .btn { flex: 0 0 auto; } }
+
+    .hero-status {
+      display: flex; flex-wrap: wrap; gap: .5rem 1.5rem;
+      margin-top: var(--sp-4);
+      color: var(--c-muted);
+    }
+    .hero-status .mono { color: var(--c-muted); }
+    .hero-status b { color: var(--c-ok); font-weight: 600; }
+
+    /* Станция */
+    .station-wrap {
+      position: relative;
+      width: min(100%, 520px);
+      margin-inline: auto;
+      animation: float 9s ease-in-out infinite;
+    }
+    .station-wrap svg { width: 100%; height: auto; overflow: visible; }
+    .station-ring { transform-origin: 260px 260px; animation: spin 60s linear infinite; }
+    @keyframes float { 50% { transform: translateY(-14px) rotate(-1.5deg); } }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .blink { animation: twinkle 1.4s ease-in-out infinite alternate; }
+
+    @media (min-width: 900px) {
+      .hero-grid { grid-template-columns: 1.1fr .9fr; }
+    }
+
+    /* =========================================================
+       6. ПАНЕЛИ И КАРТОЧКИ (общий стиль «интерфейса станции»)
+       ========================================================= */
+    .panel {
+      position: relative;
+      background: var(--c-surface);
+      border: 1px solid var(--c-line);
+      border-radius: var(--r-md);
+      padding: var(--sp-3);
+      -webkit-backdrop-filter: blur(8px);
+      backdrop-filter: blur(8px);
+      box-shadow: var(--sh-card);
+    }
+    /* Уголки-скобки */
+    .panel::before, .panel::after {
+      content: "";
+      position: absolute;
+      width: 16px; height: 16px;
+      border: 2px solid var(--accent, var(--c-cyan));
+      pointer-events: none;
+      opacity: .85;
+    }
+    .panel::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; border-top-left-radius: var(--r-md); }
+    .panel::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; border-bottom-right-radius: var(--r-md); }
+
+    .grid { display: grid; gap: var(--sp-3); }
+    @media (min-width: 600px) { .grid--2, .grid--3 { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) { .grid--3 { grid-template-columns: repeat(3, 1fr); } }
+
+    /* =========================================================
+       7. ОБ ИГРЕ
+       ========================================================= */
+    .about-grid { display: grid; gap: var(--sp-4); align-items: start; }
+    .about-text p { color: #d3dbf2; }
+    .about-text strong { color: var(--c-text); }
+    .readout { font-family: var(--f-mono); font-size: .85rem; }
+    .readout li {
+      display: flex; justify-content: space-between; gap: 1rem;
+      padding: .65rem 0;
+      border-bottom: 1px dashed rgba(77, 225, 255, .18);
+    }
+    .readout li:last-child { border-bottom: 0; }
+    .readout span:first-child { color: var(--c-muted); }
+    .readout .ok { color: var(--c-ok); }
+    .readout .warn { color: var(--c-wip); }
+    .readout .alert { color: var(--c-orange); }
+    @media (min-width: 900px) { .about-grid { grid-template-columns: 1.4fr 1fr; } }
+
+    /* =========================================================
+       8. МЕХАНИКИ
+       ========================================================= */
+    .feature {
+      transition: transform .3s var(--ease), box-shadow .3s var(--ease), border-color .3s;
+    }
+    .feature-icon {
+      width: 52px; height: 52px;
+      display: grid; place-items: center;
+      margin-bottom: var(--sp-2);
+      border-radius: var(--r-sm);
+      background: rgba(77, 225, 255, .08);
+      border: 1px solid var(--c-line);
+      color: var(--c-cyan);
+    }
+    .feature-icon svg { width: 28px; height: 28px; }
+    .feature h3 { font-size: var(--fs-h3); }
+    .feature p { color: var(--c-muted); margin: 0; }
+    .feature .mono { display: block; margin-bottom: .4rem; color: var(--c-plan); }
+    @media (hover: hover) {
+      .feature:hover {
+        transform: translateY(-6px);
+        border-color: rgba(77, 225, 255, .6);
+        box-shadow: var(--sh-glow), var(--sh-card);
+      }
+    }
+
+    /* =========================================================
+       9. ОТДЕЛЫ
+       ========================================================= */
+    .dept {
+      --accent: var(--c-cyan);
+      border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+      display: flex; flex-direction: column;
+      transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+    }
+    .dept--eng { --accent: var(--d-eng); }
+    .dept--med { --accent: var(--d-med); }
+    .dept--sci { --accent: var(--d-sci); }
+    .dept--sec { --accent: var(--d-sec); }
+    .dept--cmd { --accent: var(--d-cmd); }
+    .dept-top { display: flex; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+    .dept-icon {
+      flex: none;
+      width: 56px; height: 56px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+      box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 25%, transparent);
+    }
+    .dept-icon svg { width: 28px; height: 28px; }
+    .dept h3 { margin: 0; font-size: var(--fs-h3); }
+    .dept .mono { color: var(--accent); }
+    .dept p { color: #cfd7ee; }
+    .dept-tasks { margin-bottom: var(--sp-2); }
+    .dept-tasks li {
+      position: relative;
+      padding-left: 1.2rem;
+      color: var(--c-muted);
+      font-size: .95rem;
+      margin-bottom: .3rem;
+    }
+    .dept-tasks li::before {
+      content: "";
+      position: absolute; left: 0; top: .65em;
+      width: 6px; height: 6px;
+      background: var(--accent);
+      transform: rotate(45deg);
+    }
+    .dept-case {
+      margin-top: auto;
+      padding: .9rem 1rem;
+      border-left: 3px solid var(--accent);
+      background: rgba(0, 0, 0, .25);
+      border-radius: 0 var(--r-sm) var(--r-sm) 0;
+      font-size: .93rem;
+      color: #dbe2f5;
+    }
+    .dept-case .mono { display: block; margin-bottom: .25rem; font-size: 0.8125rem; }
+    @media (hover: hover) {
+      .dept:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 0 0 1px var(--accent), 0 0 28px color-mix(in srgb, var(--accent) 30%, transparent), var(--sh-card);
+      }
+    }
+    .dept-grid { display: grid; gap: var(--sp-3); }
+    @media (min-width: 600px) { .dept-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 900px) {
+      .dept-grid { grid-template-columns: repeat(6, 1fr); }
+      .dept-grid > .dept { grid-column: span 2; }
+      .dept-grid > .dept:nth-child(4) { grid-column: 2 / span 2; }
+    }
+
+    .incident {
+      margin-top: var(--sp-4);
+      --accent: var(--c-orange);
+      border-color: rgba(255, 138, 61, .45);
+      background: linear-gradient(135deg, rgba(255, 138, 61, .1), rgba(16, 24, 48, .6));
+    }
+    .incident .mono { color: var(--c-orange); display: block; margin-bottom: .4rem; }
+    .incident p { margin: 0; }
+
+    /* =========================================================
+       10. ТАЙМЛАЙН СМЕНЫ
+       ========================================================= */
+    .timeline { position: relative; display: grid; gap: var(--sp-3); counter-reset: step; }
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 23px; top: 10px; bottom: 10px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--c-cyan), var(--c-wip), var(--c-orange), #ff4d4d, var(--c-violet));
+      opacity: .6;
+    }
+    .step { position: relative; padding-left: 68px; }
+    .step-dot {
+      position: absolute;
+      left: 0; top: 0;
+      width: 48px; height: 48px;
+      display: grid; place-items: center;
+      border-radius: 50%;
+      background: var(--c-surface-solid);
+      border: 2px solid var(--step-c, var(--c-cyan));
+      box-shadow: 0 0 16px color-mix(in srgb, var(--step-c, var(--c-cyan)) 40%, transparent);
+      font-family: var(--f-mono);
+      font-weight: 600;
+      color: var(--step-c, var(--c-cyan));
+    }
+    .step h3 { font-size: var(--fs-h3); margin-bottom: .35rem; }
+    .step p { color: var(--c-muted); margin: 0; font-size: .97rem; }
+    .step .mono { display: block; color: var(--step-c, var(--c-cyan)); margin-bottom: .25rem; }
+    .step:nth-child(1) { --step-c: var(--c-cyan); }
+    .step:nth-child(2) { --step-c: var(--c-ok); }
+    .step:nth-child(3) { --step-c: var(--c-wip); }
+    .step:nth-child(4) { --step-c: #ff4d4d; }
+    .step:nth-child(5) { --step-c: var(--d-sci); }
+
+    @media (min-width: 900px) {
+      .timeline { grid-template-columns: repeat(5, 1fr); gap: var(--sp-2); }
+      .timeline::before {
+        left: 24px; right: 24px; top: 23px; bottom: auto;
+        width: auto; height: 2px;
+        background: linear-gradient(90deg, var(--c-cyan), var(--c-ok), var(--c-wip), #ff4d4d, var(--d-sci));
+      }
+      .step { padding-left: 0; padding-top: 68px; }
+    }
+
+    /* =========================================================
+       11. ГАЛЕРЕЯ
+       ========================================================= */
+    .shot {
+      position: relative;
+      margin: 0;
+      aspect-ratio: 16 / 9;
+      border-radius: var(--r-md);
+      overflow: hidden;
+      border: 1px solid var(--c-line);
+      background:
+        linear-gradient(rgba(77,225,255,.07) 1px, transparent 1px) 0 0 / 28px 28px,
+        linear-gradient(90deg, rgba(77,225,255,.07) 1px, transparent 1px) 0 0 / 28px 28px,
+        radial-gradient(120% 90% at 30% 20%, var(--shot-c, rgba(139, 92, 246, .35)), transparent 60%),
+        linear-gradient(160deg, #0c1430, #060912);
+      display: grid;
+      place-items: center;
+      transition: transform .3s var(--ease), box-shadow .3s var(--ease);
+    }
+    .shot::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 2px, transparent 2px 4px);
+      pointer-events: none;
+    }
+    .shot:nth-child(2) { --shot-c: rgba(255, 138, 61, .3); }
+    .shot:nth-child(3) { --shot-c: rgba(46, 230, 166, .25); }
+    .shot:nth-child(4) { --shot-c: rgba(77, 225, 255, .3); }
+    .shot:nth-child(5) { --shot-c: rgba(255, 90, 106, .28); }
+    .shot:nth-child(6) { --shot-c: rgba(90, 162, 255, .3); }
+    .shot-label {
+      position: absolute;
+      top: .8rem; left: 1rem; right: 1rem;
+      display: flex; justify-content: space-between; gap: .5rem;
+      font-family: var(--f-mono);
+      font-size: 0.85rem;
+      letter-spacing: .1em;
+      color: rgba(200, 240, 255, .75);
+      text-transform: uppercase;
+    }
+    .shot figcaption {
+      position: relative;
+      z-index: 1;
+      font-family: var(--f-mono);
+      font-size: .95rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--c-cyan);
+      padding: .5rem 1rem;
+      border: 1px dashed rgba(77,225,255,.5);
+      background: rgba(5, 7, 15, .6);
+      text-align: center;
+    }
+    .shot figcaption small { display: block; font-size: 0.8125rem; color: var(--c-muted); letter-spacing: .08em; text-transform: none; }
+    @media (hover: hover) {
+      .shot:hover { transform: scale(1.02); box-shadow: var(--sh-glow); }
+    }
+
+    /* =========================================================
+       12. ДОРОЖНАЯ КАРТА
+       ========================================================= */
+    .roadmap { display: grid; gap: var(--sp-2); }
+    .road-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: .25rem var(--sp-2);
+      align-items: start;
+      --accent: var(--st-c);
+    }
+    .road-item .num {
+      grid-row: span 3;
+      font-family: var(--f-mono);
+      font-size: 1.4rem;
+      color: var(--st-c);
+      opacity: .9;
+    }
+    .road-item h3 { font-size: var(--fs-h3); margin: 0; }
+    .road-item p { color: var(--c-muted); margin: 0; font-size: .95rem; }
+    .status {
+      justify-self: start;
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .25rem .65rem;
+      border-radius: 999px;
+      font-family: var(--f-mono);
+      font-size: 0.875rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--st-c);
+      border: 1px solid color-mix(in srgb, var(--st-c) 55%, transparent);
+      background: color-mix(in srgb, var(--st-c) 10%, transparent);
+    }
+    .status::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--st-c); }
+    .is-done { --st-c: var(--c-ok); }
+    .is-wip { --st-c: var(--c-wip); }
+    .is-wip .status::before { animation: pulse 1.6s ease-in-out infinite; }
+    .is-plan { --st-c: var(--c-plan); }
+    .progress {
+      height: 6px;
+      border-radius: 6px;
+      background: rgba(255,255,255,.08);
+      overflow: hidden;
+      margin-bottom: var(--sp-4);
+    }
+    .progress span {
+      display: block; height: 100%; width: 100%;
+      background: linear-gradient(90deg, var(--c-ok), var(--c-wip), var(--c-orange));
+      transform-origin: left;
+      transform: scaleX(.42);
+    }
+    .progress-label { display: flex; justify-content: space-between; margin-bottom: .5rem; }
+    @media (min-width: 600px) { .roadmap { grid-template-columns: repeat(2, 1fr); } }
+    @media (min-width: 1200px) { .roadmap { grid-template-columns: repeat(3, 1fr); } }
+
+    /* =========================================================
+       13. FAQ
+       ========================================================= */
+    .faq { max-width: 860px; display: grid; gap: var(--sp-2); }
+    .faq details {
+      background: var(--c-surface);
+      border: 1px solid var(--c-line);
+      border-radius: var(--r-md);
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .faq details[open] { border-color: rgba(77, 225, 255, .55); box-shadow: var(--sh-glow); }
+    .faq summary {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      min-height: 56px;
+      padding: .9rem 1.25rem;
+      cursor: pointer;
+      list-style: none;
+      font-weight: 600;
+      font-size: 1.05rem;
+      border-radius: var(--r-md);
+    }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after {
+      content: "+";
+      flex: none;
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      font-family: var(--f-mono);
+      color: var(--c-cyan);
+      border: 1px solid var(--c-line);
+      border-radius: 50%;
+      transition: transform .3s var(--ease);
+    }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq .answer { padding: 0 1.25rem 1.25rem; color: var(--c-muted); }
+    .faq .answer p:last-child { margin: 0; }
+
+    /* =========================================================
+       14. CTA
+       ========================================================= */
+    .cta {
+      --accent: var(--c-orange);
+      padding: clamp(2rem, 1rem + 4vw, 4rem);
+      text-align: center;
+      border-color: rgba(255, 138, 61, .45);
+      background:
+        radial-gradient(600px 300px at 50% 0%, rgba(255, 138, 61, .2), transparent 70%),
+        radial-gradient(600px 300px at 50% 100%, rgba(139, 92, 246, .22), transparent 70%),
+        rgba(14, 21, 48, .75);
+      overflow: hidden;
+    }
+    .cta h2 { font-size: var(--fs-h2); }
+    .cta > p { color: #d3dbf2; max-width: 620px; margin-inline: auto; }
+    .subscribe {
+      display: flex; flex-direction: column; gap: var(--sp-1);
+      max-width: 520px;
+      margin: var(--sp-4) auto var(--sp-2);
+    }
+    .subscribe input {
+      flex: 1;
+      min-height: 52px;
+      padding: .75rem 1rem;
+      font: inherit;
+      color: var(--c-text);
+      background: rgba(5, 7, 15, .75);
+      border: 1px solid rgba(77, 225, 255, .45);
+      border-radius: var(--r-sm);
+    }
+    .subscribe input::placeholder { color: #8893b3; }
+    .subscribe input:focus-visible { outline: 2px solid var(--c-cyan); outline-offset: 2px; }
+    .subscribe .btn { min-height: 52px; }
+    .form-note { font-size: var(--fs-small); color: var(--c-muted); }
+    .form-status { min-height: 1.5em; font-family: var(--f-mono); font-size: .85rem; color: var(--c-ok); }
+    @media (min-width: 600px) { .subscribe { flex-direction: row; } }
+
+    .socials { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--sp-2); margin-top: var(--sp-3); }
+    .social {
+      display: inline-flex; align-items: center; gap: .55rem;
+      min-height: 48px;
+      padding: .5rem 1.1rem;
+      border: 1px solid var(--c-line);
+      border-radius: var(--r-sm);
+      color: var(--c-text);
+      text-decoration: none;
+      background: rgba(77, 225, 255, .05);
+      transition: transform .25s var(--ease), box-shadow .25s, border-color .25s;
+    }
+    .social svg { width: 22px; height: 22px; color: var(--c-cyan); }
+    @media (hover: hover) {
+      .social:hover { transform: translateY(-3px); border-color: var(--c-cyan); box-shadow: var(--sh-glow); }
+    }
+
+    /* =========================================================
+       15. ПОДВАЛ
+       ========================================================= */
+    .site-footer {
+      border-top: 1px solid var(--c-line);
+      padding-block: var(--sp-5) var(--sp-4);
+      background: rgba(3, 4, 10, .6);
+    }
+    .footer-grid { display: grid; gap: var(--sp-4); }
+    .footer-grid p { color: var(--c-muted); font-size: .95rem; max-width: 420px; }
+    .footer-title { font-family: var(--f-mono); font-size: var(--fs-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c-cyan); margin-bottom: var(--sp-1); }
+    .footer-links a {
+      display: inline-flex; align-items: center;
+      min-height: 44px;
+      color: var(--c-text);
+      text-decoration: none;
+    }
+    .footer-links a:hover { color: var(--c-cyan); text-decoration: underline; }
+    .copyright {
+      margin-top: var(--sp-4);
+      padding-top: var(--sp-3);
+      border-top: 1px dashed rgba(77,225,255,.15);
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem;
+      font-size: var(--fs-small);
+      color: var(--c-muted);
+    }
+    @media (min-width: 600px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr; } }
+
+    /* =========================================================
+       16. ПОЯВЛЕНИЕ ПРИ ПРОКРУТКЕ (только если работает JS)
+       ========================================================= */
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(28px);
+      transition: opacity .7s var(--ease), transform .7s var(--ease);
+    }
+    .js .reveal.is-visible { opacity: 1; transform: none; }
+
+    /* =========================================================
+       17. УМЕНЬШЕНИЕ ДВИЖЕНИЯ
+       ========================================================= */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+      }
+      .js .reveal { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <a class="skip-link" href="#main">Перейти к содержимому</a>
+
+  <!-- =======================================================
+       ШАПКА
+       ======================================================= -->
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="#top" aria-label="Космостан — на главную">
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <ellipse cx="32" cy="32" rx="26" ry="9" fill="none" stroke="#4de1ff" stroke-width="3" transform="rotate(-25 32 32)"/>
+          <circle cx="32" cy="32" r="10" fill="#ff8a3d"/>
+          <circle cx="54" cy="20" r="3" fill="#4de1ff"/>
+        </svg>
+        Космостан
+      </a>
+
+      <button type="button" id="nav-toggle" class="burger" aria-expanded="false" aria-controls="main-nav" aria-label="Открыть меню">
+        <span aria-hidden="true"></span>
+      </button>
+
+      <nav class="main-nav" id="main-nav" aria-label="Основная навигация">
+        <ul>
+          <li><a href="#about">Об игре</a></li>
+          <li><a href="#features">Механики</a></li>
+          <li><a href="#crew">Отделы</a></li>
+          <li><a href="#shift">Смена</a></li>
+          <li><a href="#gallery">Галерея</a></li>
+          <li><a href="#roadmap">Разработка</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <a class="btn btn--primary" href="#follow">Следить за разработкой</a>
+      </nav>
+
+      <a class="btn btn--primary btn--sm header-cta" href="#follow">Следить за разработкой</a>
+    </div>
+  </header>
+
+  <main id="main">
+
+    <!-- =======================================================
+         HERO
+         ======================================================= -->
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="stars stars--far" aria-hidden="true"></div>
+      <div class="stars stars--mid" aria-hidden="true"></div>
+      <div class="stars stars--near" aria-hidden="true"></div>
+      <div class="planet" aria-hidden="true"></div>
+
+      <div class="container hero-grid">
+        <div>
+          <span class="badge">В разработке</span>
+          <h1 id="hero-title">Космостан</h1>
+          <p class="hero-slogan">Одна станция. Один экипаж. Тысяча способов всё сломать.</p>
+          <p class="hero-lead">
+            Кооперативная 3D-игра о буднях экипажа орбитальной станции. Чини отсеки, туши пожары,
+            закрывай гермодвери и держи воздух внутри — пока кто-нибудь снова не нажал не ту кнопку.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn--primary" href="#follow">Следить за разработкой</a>
+            <a class="btn btn--ghost" href="#about">Узнать об игре</a>
+          </div>
+          <div class="hero-status" aria-hidden="true">
+            <span class="mono">// СТАНЦИЯ «ЗАРЯ-7»</span>
+            <span class="mono">ДАВЛЕНИЕ: <b>101,3 кПа</b></span>
+            <span class="mono">СТАТУС: <b>НОМИНАЛЬНО</b></span>
+          </div>
+        </div>
+
+        <!-- Силуэт станции (inline-SVG) -->
+        <div class="station-wrap" aria-hidden="true">
+          <svg viewBox="0 0 520 520" role="presentation">
+            <defs>
+              <linearGradient id="hull" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stop-color="#2a3a6e"/>
+                <stop offset="1" stop-color="#0d1430"/>
+              </linearGradient>
+              <radialGradient id="core" cx=".5" cy=".5" r=".5">
+                <stop offset="0" stop-color="#bff3ff"/>
+                <stop offset=".5" stop-color="#4de1ff"/>
+                <stop offset="1" stop-color="#4de1ff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <!-- Вращающееся кольцо -->
+            <g class="station-ring">
+              <circle cx="260" cy="260" r="200" fill="none" stroke="#4de1ff" stroke-opacity=".25" stroke-width="2" stroke-dasharray="4 10"/>
+              <circle cx="260" cy="260" r="170" fill="none" stroke="url(#hull)" stroke-width="26"/>
+              <circle cx="260" cy="260" r="170" fill="none" stroke="#4de1ff" stroke-opacity=".5" stroke-width="1"/>
+              <g fill="#ffd27a">
+                <rect x="252" y="84" width="16" height="8" rx="2"/>
+                <rect x="252" y="428" width="16" height="8" rx="2"/>
+                <rect x="84" y="252" width="8" height="16" rx="2"/>
+                <rect x="428" y="252" width="8" height="16" rx="2"/>
+              </g>
+              <!-- Спицы -->
+              <g stroke="#3b4f8f" stroke-width="8" stroke-linecap="round">
+                <line x1="260" y1="110" x2="260" y2="210"/>
+                <line x1="260" y1="310" x2="260" y2="410"/>
+                <line x1="110" y1="260" x2="210" y2="260"/>
+                <line x1="310" y1="260" x2="410" y2="260"/>
+              </g>
+            </g>
+            <!-- Солнечные панели -->
+            <g>
+              <rect x="20" y="236" width="70" height="48" fill="#132a5a" stroke="#4de1ff" stroke-opacity=".6"/>
+              <rect x="430" y="236" width="70" height="48" fill="#132a5a" stroke="#4de1ff" stroke-opacity=".6"/>
+              <path d="M20 252h70M20 268h70M43 236v48M66 236v48M430 252h70M430 268h70M453 236v48M476 236v48" stroke="#4de1ff" stroke-opacity=".35"/>
+            </g>
+            <!-- Центральный модуль -->
+            <circle cx="260" cy="260" r="60" fill="url(#hull)" stroke="#4de1ff" stroke-opacity=".7" stroke-width="2"/>
+            <circle cx="260" cy="260" r="34" fill="url(#core)"/>
+            <!-- Огни -->
+            <circle class="blink" cx="260" cy="194" r="4" fill="#ff8a3d"/>
+            <circle class="blink" cx="326" cy="260" r="3" fill="#3ee69a"/>
+            <circle cx="194" cy="260" r="3" fill="#4de1ff"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         ОБ ИГРЕ
+         ======================================================= -->
+    <section class="section" id="about" aria-labelledby="about-title">
+      <div class="container about-grid">
+        <div class="about-text reveal">
+          <span class="mono">// СЕКТОР 01 · БРИФИНГ</span>
+          <h2 id="about-title">Добро пожаловать на борт</h2>
+          <p>
+            Ты — член экипажа космической станции. Не избранный герой, а человек со своей должностью,
+            пропуском и списком задач. Кто-то следит за реактором, кто-то лечит ожоги, кто-то ставит
+            эксперименты, о последствиях которых лучше не думать. <strong>Без остальных ты не справишься</strong>,
+            и они без тебя тоже.
+          </p>
+          <p>
+            Станция живёт по физическим законам. Воздух растекается по отсекам, пробоина высасывает
+            всё, что не прикручено, пожар съедает кислород, а токсичный газ спокойно дойдёт до столовой,
+            если никто не закроет гермодверь.
+          </p>
+          <p>
+            Каждая смена непредсказуема. Сегодня спокойная рутина, завтра метеоритный дождь,
+            утечка в лаборатории и загадочно открытый шлюз. Главное — договориться и <span class="accent">не паниковать</span>. Ну, хотя бы не всем сразу.
+          </p>
+        </div>
+
+        <aside class="panel reveal" aria-label="Сводка станции">
+          <span class="mono">// ТЕЛЕМЕТРИЯ</span>
+          <ul class="readout">
+            <li><span>Жанр</span><span>Кооперативный симулятор станции</span></li>
+            <li><span>Вид</span><span>3D, от первого лица</span></li>
+            <li><span>Экипаж</span><span>5 отделов</span></li>
+            <li><span>Атмосфера</span><span class="ok">Симулируется</span></li>
+            <li><span>Обшивка</span><span class="warn">Разрушаема</span></li>
+            <li><span>Шлюз №3</span><span class="alert">Кто его открыл?</span></li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         КЛЮЧЕВЫЕ МЕХАНИКИ
+         ======================================================= -->
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 02 · СИСТЕМЫ</span>
+          <h2 id="features-title">Ключевые механики</h2>
+          <p>Всё на станции можно сломать, и почти всё можно починить. Вопрос только в том, кто успеет первым.</p>
+        </div>
+
+        <ul class="grid grid--3">
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M9 21v-6l2 2 2-3 2 3v4"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.1</span>
+            <h3>Разрушаемые отсеки</h3>
+            <p>Обшивку, стены и оборудование можно пробить, прожечь и разнести. Потом — залатать, переварить и перезапустить.</p>
+          </li>
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l2.5 2.5M16.5 16.5 19 19M5 19l2.5-2.5M16.5 7.5 19 5"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.2</span>
+            <h3>Разгерметизация</h3>
+            <p>Пробоина — и воздух уходит в вакуум, прихватив с собой ящики, инструменты и зазевавшихся коллег.</p>
+          </li>
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h8"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.3</span>
+            <h3>Газы и температура</h3>
+            <p>Газы растекаются по отсекам, давление и температура меняются в реальном времени. Пожары и токсичные утечки — в комплекте.</p>
+          </li>
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 3v18M8 10v4M16 10v4"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.4</span>
+            <h3>Шлюзы и гермодвери</h3>
+            <p>Выход в открытый космос, изоляция аварийной зоны и вечный спор: закрыть дверь сейчас или подождать тех, кто остался внутри.</p>
+          </li>
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M2 20c0-3 3-5 6-5s6 2 6 5M12 20c0-3 2-5 4-5 3 0 6 2 6 5"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.5</span>
+            <h3>Кооператив</h3>
+            <p>Играй с друзьями в одном экипаже. Общение, распределение задач и командные решения важнее быстрой реакции.</p>
+          </li>
+          <li class="panel feature reveal">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4h16v12H4z"/><path d="M8 20h8M12 16v4M7 12l3-3 2 2 4-4"/>
+              </svg>
+            </div>
+            <span class="mono">МОДУЛЬ 2.6</span>
+            <h3>Живая песочница</h3>
+            <p>Системы связаны между собой: короткое замыкание вызывает пожар, пожар — утечку, утечка — эвакуацию. Каждая цепочка уникальна.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         ОТДЕЛЫ ЭКИПАЖА
+         ======================================================= -->
+    <section class="section" id="crew" aria-labelledby="crew-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 03 · ЛИЧНЫЙ СОСТАВ</span>
+          <h2 id="crew-title">Отделы экипажа</h2>
+          <p>Пять отделов, у каждого свои задачи и инструменты. Станция держится, только пока все делают свою часть.</p>
+        </div>
+
+        <ul class="dept-grid">
+          <!-- Инженерный -->
+          <li class="panel dept dept--eng reveal">
+            <div class="dept-top">
+              <div class="dept-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>
+                </svg>
+              </div>
+              <div>
+                <span class="mono">ОТДЕЛ 01</span>
+                <h3>Инженерный отдел</h3>
+              </div>
+            </div>
+            <p>Сердце и руки станции. Без инженеров нет света, воздуха и тепла.</p>
+            <ul class="dept-tasks">
+              <li>энергосистема и реактор</li>
+              <li>ремонт обшивки и оборудования</li>
+              <li>жизнеобеспечение и вентиляция</li>
+            </ul>
+            <div class="dept-case"><span class="mono">ТИПИЧНАЯ СИТУАЦИЯ</span>Свет мигает третий раз за смену. Кто-то опять подключил кофемашину к резервной линии.</div>
+          </li>
+
+          <!-- Медицинский -->
+          <li class="panel dept dept--med reveal">
+            <div class="dept-top">
+              <div class="dept-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>
+                </svg>
+              </div>
+              <div>
+                <span class="mono">ОТДЕЛ 02</span>
+                <h3>Медицинский отдел</h3>
+              </div>
+            </div>
+            <p>Возвращают в строй тех, кому не повезло оказаться рядом с инцидентом.</p>
+            <ul class="dept-tasks">
+              <li>лечение травм и ожогов</li>
+              <li>помощь при декомпрессии</li>
+              <li>отравления и карантин</li>
+            </ul>
+            <div class="dept-case"><span class="mono">ТИПИЧНАЯ СИТУАЦИЯ</span>Пациент с обморожением утверждает, что «только на секунду выглянул в шлюз».</div>
+          </li>
+
+          <!-- Научный -->
+          <li class="panel dept dept--sci reveal">
+            <div class="dept-top">
+              <div class="dept-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2h12.4a1.5 1.5 0 0 0 1.3-2L14 9V3"/><path d="M7 15h10"/>
+                </svg>
+              </div>
+              <div>
+                <span class="mono">ОТДЕЛ 03</span>
+                <h3>Научный отдел</h3>
+              </div>
+            </div>
+            <p>Ради них станция и существует. Иногда вопреки им же.</p>
+            <ul class="dept-tasks">
+              <li>исследования и эксперименты</li>
+              <li>изучение аномалий</li>
+              <li>анализ образцов</li>
+            </ul>
+            <div class="dept-case"><span class="mono">ТИПИЧНАЯ СИТУАЦИЯ</span>Образец светится. Раньше не светился. Учёные в восторге, остальные — не очень.</div>
+          </li>
+
+          <!-- Служба безопасности -->
+          <li class="panel dept dept--sec reveal">
+            <div class="dept-top">
+              <div class="dept-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>
+                </svg>
+              </div>
+              <div>
+                <span class="mono">ОТДЕЛ 04</span>
+                <h3>Служба безопасности</h3>
+              </div>
+            </div>
+            <p>Держат порядок и выясняют, почему всё пошло не по плану.</p>
+            <ul class="dept-tasks">
+              <li>порядок и доступ в отсеки</li>
+              <li>расследование инцидентов</li>
+              <li>защита экипажа</li>
+            </ul>
+            <div class="dept-case"><span class="mono">ТИПИЧНАЯ СИТУАЦИЯ</span>Журнал доступа говорит, что шлюз открыли изнутри. В шлюзе никого не было.</div>
+          </li>
+
+          <!-- Командование -->
+          <li class="panel dept dept--cmd reveal">
+            <div class="dept-top">
+              <div class="dept-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m12 3 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>
+                </svg>
+              </div>
+              <div>
+                <span class="mono">ОТДЕЛ 05</span>
+                <h3>Командование</h3>
+              </div>
+            </div>
+            <p>Видят картину целиком и принимают решения, за которые потом отвечают.</p>
+            <ul class="dept-tasks">
+              <li>координация отделов</li>
+              <li>расстановка приоритетов</li>
+              <li>решения в кризисе</li>
+            </ul>
+            <div class="dept-case"><span class="mono">ТИПИЧНАЯ СИТУАЦИЯ</span>Три тревоги одновременно и одна свободная бригада. Выбирай, капитан.</div>
+          </li>
+        </ul>
+
+        <div class="panel incident reveal">
+          <span class="mono">⚠ ИНЦИДЕНТ · СЕКТОР Б · ПРИМЕР</span>
+          <p>Пробоина в секторе Б: инженеры латают обшивку, медики вытаскивают пострадавших, СБ выясняет, кто открыл шлюз, учёные спасают образцы, а командование решает, какую гермодверь закрыть — и кто останется по ту сторону.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         КАК ПРОХОДИТ СМЕНА
+         ======================================================= -->
+    <section class="section" id="shift" aria-labelledby="shift-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 04 · ЖУРНАЛ СМЕНЫ</span>
+          <h2 id="shift-title">Как проходит смена</h2>
+          <p>Любая смена начинается спокойно. Почти никакая так не заканчивается.</p>
+        </div>
+
+        <ol class="timeline">
+          <li class="step reveal">
+            <span class="step-dot" aria-hidden="true">01</span>
+            <span class="mono">08:00</span>
+            <h3>Заступление</h3>
+            <p>Получаешь должность, снаряжение и инструктаж. Проверяешь, что скафандр действительно твой размер.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-dot" aria-hidden="true">02</span>
+            <span class="mono">09:30</span>
+            <h3>Рутина</h3>
+            <p>Обслуживание систем, эксперименты, обходы. Самое время запастись кислородом и терпением.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-dot" aria-hidden="true">03</span>
+            <span class="mono">13:12</span>
+            <h3>Инцидент</h3>
+            <p>Короткое замыкание, метеорит или чей-то «маленький эксперимент». Что-то пошло не так.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-dot" aria-hidden="true">04</span>
+            <span class="mono">13:14</span>
+            <h3>Кризис</h3>
+            <p>Падает давление, растёт температура, все говорят одновременно. Командная работа решает всё.</p>
+          </li>
+          <li class="step reveal">
+            <span class="step-dot" aria-hidden="true">05</span>
+            <span class="mono">20:00</span>
+            <h3>Разбор полётов</h3>
+            <p>Считаем потери, ищем виноватых и обещаем, что в следующий раз точно закроем дверь.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         ГАЛЕРЕЯ
+         ======================================================= -->
+    <section class="section" id="gallery" aria-labelledby="gallery-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 05 · ВИДЕОНАБЛЮДЕНИЕ</span>
+          <h2 id="gallery-title">Галерея</h2>
+          <p>Камеры станции ещё калибруются. Первые кадры появятся здесь совсем скоро.</p>
+        </div>
+
+        <!--
+          КАК ВСТАВИТЬ РЕАЛЬНЫЕ СКРИНШОТЫ:
+          замени содержимое любого <figure class="shot"> на
+          <img src="screens/shot-01.webp" alt="Описание кадра" width="1600" height="900" loading="lazy">
+          и добавь в CSS: .shot img { width:100%; height:100%; object-fit:cover; }
+          Подпись можно оставить в <figcaption> или убрать.
+        -->
+        <div class="grid grid--3">
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-01 · Мостик</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Командный мостик</small></figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-02 · Реактор</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Инженерный отсек</small></figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-03 · Медблок</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Медицинский отсек</small></figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-04 · Шлюз</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Выход в открытый космос</small></figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-05 · Сектор Б</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Разгерметизация</small></figcaption>
+          </figure>
+          <figure class="shot reveal">
+            <div class="shot-label" aria-hidden="true"><span>КАМ-06 · Лаборатория</span><span>● REC</span></div>
+            <figcaption>Скриншот скоро<small>Научный отдел</small></figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         ДОРОЖНАЯ КАРТА
+         ======================================================= -->
+    <section class="section" id="roadmap" aria-labelledby="roadmap-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 06 · ПЛАН ПОЛЁТА</span>
+          <h2 id="roadmap-title">Дорожная карта разработки</h2>
+          <p>Сроки примерные: космос не любит дедлайнов, а мы не любим выпускать сырое.</p>
+        </div>
+
+        <div class="reveal">
+          <div class="progress-label mono"><span>ОБЩИЙ ПРОГРЕСС</span><span>≈ 42%</span></div>
+          <div class="progress" role="img" aria-label="Общий прогресс разработки примерно 42 процента"><span></span></div>
+        </div>
+
+        <ol class="roadmap">
+          <li class="panel road-item is-done reveal">
+            <span class="num" aria-hidden="true">01</span>
+            <span class="status">Готово</span>
+            <h3>Прототип физики атмосферы</h3>
+            <p>Газы, давление и температура распространяются по отсекам.</p>
+          </li>
+          <li class="panel road-item is-done reveal">
+            <span class="num" aria-hidden="true">02</span>
+            <span class="status">Готово</span>
+            <h3>Система отсеков</h3>
+            <p>Разрушение и ремонт обшивки, стен, гермодверей и шлюзов.</p>
+          </li>
+          <li class="panel road-item is-wip reveal">
+            <span class="num" aria-hidden="true">03</span>
+            <span class="status">В работе</span>
+            <h3>Роли экипажа</h3>
+            <p>Пять отделов, их инструменты, задачи и взаимозависимости.</p>
+          </li>
+          <li class="panel road-item is-wip reveal">
+            <span class="num" aria-hidden="true">04</span>
+            <span class="status">В работе</span>
+            <h3>Сетевой кооператив</h3>
+            <p>Синхронизация станции и игроков, стабильная работа по сети.</p>
+          </li>
+          <li class="panel road-item is-plan reveal">
+            <span class="num" aria-hidden="true">05</span>
+            <span class="status">В планах</span>
+            <h3>Закрытое тестирование</h3>
+            <p>Первые смены с внешними игроками. Примерно — после готовности кооператива.</p>
+          </li>
+          <li class="panel road-item is-plan reveal">
+            <span class="num" aria-hidden="true">06</span>
+            <span class="status">В планах</span>
+            <h3>Ранний доступ</h3>
+            <p>Открытая версия для всех желающих и активное развитие вместе с сообществом.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         FAQ
+         ======================================================= -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="mono">// СЕКТОР 07 · СПРАВОЧНАЯ</span>
+          <h2 id="faq-title">Частые вопросы</h2>
+          <p>Отвечаем честно: игра в разработке, и часть ответов ещё может поменяться.</p>
+        </div>
+
+        <div class="faq reveal">
+          <details>
+            <summary>Когда выйдет игра?</summary>
+            <div class="answer"><p>Точной даты пока нет. Сначала закрытое тестирование, затем ранний доступ. Подпишись на новости — узнаешь первым.</p></div>
+          </details>
+          <details>
+            <summary>На каких платформах?</summary>
+            <div class="answer"><p>В первую очередь — ПК. Другие платформы обсудим, когда игра будет стабильно работать на основной.</p></div>
+          </details>
+          <details>
+            <summary>Сколько человек может играть вместе?</summary>
+            <div class="answer"><p>Пока честно скажем так: сколько человек окажется на одной станции, решат тесты сети. Сетевой кооператив ещё в работе, и финальную цифру мы назовём только по его итогам — никаких обещаний до этого.</p></div>
+          </details>
+          <details>
+            <summary>Будет ли тестирование и как туда попасть?</summary>
+            <div class="answer"><p>Да, закрытое тестирование запланировано. Приглашения в первую очередь получат подписчики рассылки и участники сообщества.</p></div>
+          </details>
+          <details>
+            <summary>Нужен ли мощный компьютер?</summary>
+            <div class="answer"><p>Мы стараемся, чтобы игра шла на средних ПК. Системные требования опубликуем ближе к тестированию, когда закончим оптимизацию.</p></div>
+          </details>
+          <details>
+            <summary>Будет ли русский язык?</summary>
+            <div class="answer"><p>Да, русский — один из основных языков игры: интерфейс и тексты делаем на нём с самого начала.</p></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- =======================================================
+         CTA / ПОДПИСКА
+         ======================================================= -->
+    <section class="section" id="follow" aria-labelledby="follow-title">
+      <div class="container">
+        <div class="panel cta reveal">
+          <span class="mono">// КАНАЛ СВЯЗИ ОТКРЫТ</span>
+          <h2 id="follow-title">Заступай на смену первым</h2>
+          <p>Подпишись на новости разработки: дневники, первые скриншоты и приглашения на закрытый тест. Без спама — только важные сигналы со станции.</p>
+
+          <!--
+            ПОДКЛЮЧЕНИЕ РАССЫЛКИ:
+            замени action="#" на адрес формы своего сервиса рассылки
+            (например, эндпоинт Unisender, SendPulse, Mailchimp и т. п.),
+            при необходимости добавь скрытые поля, которые требует сервис,
+            и проверь атрибут name у поля email.
+          -->
+          <form class="subscribe" action="#" method="post" id="subscribe-form">
+            <label for="email" class="visually-hidden">Твой email</label>
+            <input type="email" id="email" name="email" placeholder="твой@email.ru" autocomplete="email" required>
+            <button type="submit" class="btn btn--primary">Подписаться</button>
+          </form>
+          <p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+          <p class="form-note">Отписаться можно в один клик в любом письме.</p>
+
+          <!-- ЗАМЕНИТЬ: href на реальные ссылки сообществ -->
+          <ul class="socials">
+            <li>
+              <a class="social" href="#" aria-label="Discord-сервер Космостана">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 5h16v11H9l-5 4z"/><circle cx="9.5" cy="10.5" r="1"/><circle cx="14.5" cy="10.5" r="1"/>
+                </svg>
+                Discord
+              </a>
+            </li>
+            <li>
+              <a class="social" href="#" aria-label="Telegram-канал Космостана">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M21 4 3 11l6 2 2 6 3-4 5 4z"/><path d="m9 13 8-6"/>
+                </svg>
+                Telegram
+              </a>
+            </li>
+            <li>
+              <a class="social" href="#" aria-label="Сообщество Космостана во ВКонтакте">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.9 6 5.5"/>
+                </svg>
+                VK
+              </a>
+            </li>
+            <li>
+              <a class="social" href="#" aria-label="YouTube-канал Космостана">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="2.5" y="5" width="19" height="14" rx="4"/><path d="m10 9 5 3-5 3z"/>
+                </svg>
+                YouTube
+              </a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- =======================================================
+       ПОДВАЛ
+       ======================================================= -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <a class="logo" href="#top" aria-label="Космостан — наверх">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <ellipse cx="32" cy="32" rx="26" ry="9" fill="none" stroke="#4de1ff" stroke-width="3" transform="rotate(-25 32 32)"/>
+              <circle cx="32" cy="32" r="10" fill="#ff8a3d"/>
+            </svg>
+            Космостан
+          </a>
+          <p>Кооперативная игра о жизни экипажа космической станции. Чиним, тушим, спасаем и иногда открываем не тот шлюз.</p>
+        </div>
+        <nav aria-label="Разделы сайта">
+          <p class="footer-title">Разделы</p>
+          <ul class="footer-links">
+            <li><a href="#about">Об игре</a></li>
+            <li><a href="#crew">Отделы</a></li>
+            <li><a href="#roadmap">Разработка</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Сообщество">
+          <p class="footer-title">Сообщество</p>
+          <ul class="footer-links">
+            <li><a href="#">Discord</a></li>
+            <li><a href="#">Telegram</a></li>
+            <li><a href="#">VK</a></li>
+            <li><a href="#">YouTube</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="copyright">
+        <span>© 2026 Космостан. Игра находится в разработке.</span>
+        <span class="mono">СТАТУС: НОМИНАЛЬНО</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- =======================================================
+       МИНИМАЛЬНЫЙ JS (страница полностью работает и без него)
+       ======================================================= -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.classList.add('js');
+
+      // Мобильное меню: закрытие после клика по ссылке и по Escape
+      var burger = document.getElementById('nav-toggle');
+      var nav = document.getElementById('main-nav');
+
+      function setMenu(open) {
+        burger.setAttribute('aria-expanded', String(open));
+        burger.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+        nav.classList.toggle('is-open', open);
+      }
+
+      burger.addEventListener('click', function () {
+        setMenu(burger.getAttribute('aria-expanded') !== 'true');
+      });
+      document.querySelectorAll('.main-nav a').forEach(function (link) {
+        link.addEventListener('click', function () { setMenu(false); });
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && burger.getAttribute('aria-expanded') === 'true') {
+          setMenu(false);
+          burger.focus();
+        }
+      });
+
+      // Появление блоков при прокрутке
+      var items = document.querySelectorAll('.reveal');
+      var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (!('IntersectionObserver' in window) || reduce) {
+        items.forEach(function (el) { el.classList.add('is-visible'); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('is-visible');
+              io.unobserve(entry.target);
+            }
+          });
+        }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+        items.forEach(function (el) { io.observe(el); });
+      }
+
+      // Заглушка отправки формы, пока не подключён сервис рассылки (action="#")
+      var form = document.getElementById('subscribe-form');
+      var status = document.getElementById('form-status');
+      form.addEventListener('submit', function (e) {
+        if (form.getAttribute('action') === '#') {
+          e.preventDefault();
+          status.textContent = 'Сигнал принят! Мы напишем, когда будут новости.';
+          form.reset();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
