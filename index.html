@@ -504,11 +504,20 @@
           <span class="mono">// СЕКТОР 06 · ПЛАН ПОЛЁТА</span>
           <h2 id="roadmap-title">Дорожная карта разработки</h2>
           <p>Сроки примерные: космос не любит дедлайнов, а мы не любим выпускать сырое.</p>
+          <!-- Дата последнего обновления этого раздела -->
+          <p class="roadmap-updated mono">Обновлено: ноябрь 2026</p>
         </div>
 
+        <!--
+          КАК ПОСЧИТАН ПРОГРЕСС:
+          «Готово» — этапы со статусом «Готово» (01, 02), всего этапов — 6.
+          Доля: 2 / 6 = 33% (33.333%). Статусы и число этапов заданы ниже в разметке,
+          поэтому при изменении дорожной карты обнови подпись, aria-label,
+          и width полосы в css/style.css (селектор .progress span).
+        -->
         <div class="reveal">
-          <div class="progress-label mono"><span>ОБЩИЙ ПРОГРЕСС</span><span>≈ 42%</span></div>
-          <div class="progress" role="img" aria-label="Общий прогресс разработки примерно 42 процента"><span></span></div>
+          <div class="progress-label mono"><span>ОБЩИЙ ПРОГРЕСС</span><span>Готово: 2 из 6 этапов (33%)</span></div>
+          <div class="progress" role="img" aria-label="Готово 2 из 6 этапов дорожной карты, 33 процента"><span></span></div>
         </div>
 
         <ol class="roadmap">
